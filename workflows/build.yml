@@ -1,0 +1,33 @@
+name: Build dsp_bypass KPM
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download ARM GNU Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          # 同时下载 ARM 官方裸机工具链 (aarch64-none-elf)
+          wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz
+          tar -xf arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz
+          echo "$PWD/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin" >> $GITHUB_PATH
+
+      - name: Build KPM
+        run: |
+          make -j$(nproc)
+
+      - name: Upload KPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsp_bypass-kpm
+          path: "*.kpm"
