@@ -18,7 +18,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y make git wget xz-utils
 
-      - name: Download ARM GNU Toolchain (aarch64-none-elf)
+      - name: Download ARM GNU Toolchain
         run: |
           wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz
           tar -xf arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz
@@ -26,14 +26,13 @@ jobs:
 
       - name: Clone KernelPatch
         run: |
-          # 克隆到默认路径，保持和 Makefile 里的 $(HOME)/KernelPatch 一致
           git clone --depth 1 --branch 0.13.5 https://github.com/bmax121/KernelPatch.git /home/runner/KernelPatch
 
-      - name: Fix Makefile CC and Build KPM
+      - name: Fix Makefile CC and Force ABI
         run: |
-          # 强制将 Makefile 的编译器替换为 ARM 裸机工具链
           sed -i 's|^CC :=.*|CC = aarch64-none-elf-gcc|' Makefile
-          grep -n "^CC" Makefile
+          sed -i 's|has_state = .*;|has_state = 0; /* FORCE 6.6 ABI */|' dsp_bypass.c
+          grep -n "has_state" dsp_bypass.c
           make -j$(nproc)
 
       - name: Upload KPM artifact
