@@ -28,11 +28,18 @@ jobs:
         run: |
           git clone --depth 1 --branch 0.13.5 https://github.com/bmax121/KernelPatch.git /home/runner/KernelPatch
 
-      - name: Fix Makefile CC and Force ABI
+      - name: Fix Makefile CC and Patch Source for Kernel 6.6
         run: |
+          # 1. 修正 Makefile 编译器
           sed -i 's|^CC :=.*|CC = aarch64-none-elf-gcc|' Makefile
-          sed -i 's|has_state = .*;|has_state = 0; /* FORCE 6.6 ABI */|' dsp_bypass.c
+          
+          # 2. 强制修正 dsp_bypass.c 里的 ABI 探测逻辑，直接适配6.6内核
+          sed -i 's|has_state = .*|has_state = 0; /* FORCE 6.6 ABI */|' dsp_bypass.c
+          
+          # 3. 打印确认修改成功
           grep -n "has_state" dsp_bypass.c
+          
+          # 4. 重新编译
           make -j$(nproc)
 
       - name: Upload KPM artifact
